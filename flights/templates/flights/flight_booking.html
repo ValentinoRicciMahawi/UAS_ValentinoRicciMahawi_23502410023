@@ -1,0 +1,192 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Booking</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="window">
+            <div class="window-header">
+                <div class="window-buttons">
+                    <button class="window-button close"></button>
+                    <button class="window-button minimize"></button>
+                    <button class="window-button maximize"></button>
+                </div>
+            </div>
+            <div class="window-content">
+                <h1>Flight Booking</h1>
+                
+                {% if selected_flight %}
+                <div class="booking-info">
+                    <div class="info-section">
+                        <h3>✈️ Flight Information</h3>
+                        <div class="info-row">
+                            <span class="info-label">Flight Code:</span>
+                            <span class="info-value">
+                                {{ selected_flight.validating_airline }}-{{ selected_flight.outbound.carrier }}{{ selected_flight.outbound.number }}
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Trip Type:</span>
+                            <span class="info-value" style="color: #667eea; font-weight: 700;">
+                                {% if search_params.is_round_trip %}
+                                ↔️ ROUND TRIP
+                                {% else %}
+                                → ONE WAY
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="color: #667eea;">✈️ Outbound Flight</h3>
+                        <div class="info-row">
+                            <span class="info-label">Route:</span>
+                            <span class="info-value">
+                                {{ selected_flight.outbound.departure_iata }} → {{ selected_flight.outbound.arrival_iata }}
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Departure:</span>
+                            <span class="info-value">{{ selected_flight.outbound.departure_time|slice:":16" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Arrival:</span>
+                            <span class="info-value">{{ selected_flight.outbound.arrival_time|slice:":16" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Duration:</span>
+                            <span class="info-value">{{ selected_flight.outbound.duration|slice:"2:" }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if selected_flight.return %}
+                    <div class="info-section" style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="color: #856404;">✈️ Return Flight</h3>
+                        <div class="info-row">
+                            <span class="info-label">Route:</span>
+                            <span class="info-value">
+                                {{ selected_flight.return.departure_iata }} → {{ selected_flight.return.arrival_iata }}
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Departure:</span>
+                            <span class="info-value">{{ selected_flight.return.departure_time|slice:":16" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Arrival:</span>
+                            <span class="info-value">{{ selected_flight.return.arrival_time|slice:":16" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Duration:</span>
+                            <span class="info-value">{{ selected_flight.return.duration|slice:"2:" }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-section">
+                        <h3>💰 Price Information</h3>
+                        <div class="info-row">
+                            <span class="info-label">Total Price:</span>
+                            <span class="info-value" style="color: #667eea; font-size: 24px; font-weight: 700;">
+                                {{ selected_flight.currency }} {{ selected_flight.price }}
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Price includes:</span>
+                            <span class="info-value">
+                                {% if search_params.is_round_trip %}
+                                Both flights (Outbound + Return)
+                                {% else %}
+                                One-way flight only
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="POST" id="bookingForm">
+                    {% csrf_token %}
+                    
+                    <input type="hidden" name="flight_code" value="{{ selected_flight.validating_airline }}-{{ selected_flight.outbound.carrier }}{{ selected_flight.outbound.number }}">
+                    <input type="hidden" name="price" value="{{ selected_flight.price }}">
+                    
+                    <div class="info-section">
+                        <h3>👤 Passenger Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="passenger_name">Full Name (as on passport)</label>
+                            <input type="text" 
+                                   id="passenger_name" 
+                                   name="passenger_name" 
+                                   placeholder="Enter full name" 
+                                   required
+                                   pattern="[A-Za-z\s]+"
+                                   title="Please enter letters only">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="passport_number">Passport Number</label>
+                            <input type="text" 
+                                   id="passport_number" 
+                                   name="passport_number" 
+                                   placeholder="Enter passport number" 
+                                   required
+                                   pattern="[A-Z0-9]+"
+                                   maxlength="20"
+                                   title="Please enter passport number (letters and numbers only)">
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Important:</strong> Please ensure all information is correct before confirming your booking. 
+                        This is a test environment - no actual booking will be made.
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px; margin-top: 25px;">
+                        <a href="{% url 'search_flight' %}" class="btn btn-primary" style="width: auto;">← Back to Search</a>
+                        <button type="submit" class="btn btn-success" style="flex: 1;">
+                            Confirm Booking ✓
+                        </button>
+                    </div>
+                </form>
+                
+                {% else %}
+                <div class="alert alert-warning">
+                    <p>Flight information not found. Please search for flights again.</p>
+                </div>
+                <a href="{% url 'search_flight' %}" class="btn btn-primary">Back to Search</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('passport_number').addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase();
+        });
+        
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            const name = document.getElementById('passenger_name').value.trim();
+            const passport = document.getElementById('passport_number').value.trim();
+            
+            if (!name || !passport) {
+                e.preventDefault();
+                alert('Please fill in all required fields');
+                return false;
+            }
+            
+            if (confirm('Are you sure you want to confirm this booking?')) {
+                return true;
+            } else {
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

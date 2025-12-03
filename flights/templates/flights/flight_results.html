@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Results</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="window">
+            <div class="window-header">
+                <div class="window-buttons">
+                    <button class="window-button close"></button>
+                    <button class="window-button minimize"></button>
+                    <button class="window-button maximize"></button>
+                </div>
+            </div>
+            <div class="window-content">
+                <h1>Flight Results</h1>
+                
+                {% if error %}
+                <div class="error-message">
+                    <h3>⚠️ Error</h3>
+                    <p>{{ error }}</p>
+                    {% if error_detail %}
+                    <details style="margin-top: 10px;">
+                        <summary style="cursor: pointer;">View Details</summary>
+                        <pre style="margin-top: 10px; font-size: 12px;">{{ error_detail }}</pre>
+                    </details>
+                    {% endif %}
+                </div>
+                <a href="{% url 'search_flight' %}" class="btn btn-primary">Back to Search</a>
+                
+                {% elif flights %}
+                <div class="alert alert-info" style="margin-bottom: 25px;">
+                    <strong>Route:</strong> {{ departure_city }} → {{ arrival_city }} 
+                    {% if is_round_trip %}
+                    ↔️ {{ arrival_city }} → {{ departure_city }}
+                    {% endif %}
+                    <br>
+                    <strong>Departure:</strong> {{ departure_date }}
+                    {% if return_date %} | <strong>Return:</strong> {{ return_date }}{% endif %}
+                    <br>
+                    <strong style="color: #667eea;">
+                        {% if is_round_trip %}
+                        💰 Prices shown are for ROUND TRIP (both ways)
+                        {% else %}
+                        💰 Prices shown are for ONE WAY only
+                        {% endif %}
+                    </strong>
+                </div>
+                
+                <form method="GET" id="bookingForm">
+                    {% for flight in flights %}
+                    <div class="flight-item" style="flex-direction: column; align-items: stretch;">
+                        <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 15px;">
+                            <input type="radio" 
+                                   name="selected_flight" 
+                                   value="{{ forloop.counter0 }}" 
+                                   class="flight-radio"
+                                   id="flight{{ forloop.counter0 }}"
+                                   data-index="{{ forloop.counter0 }}">
+                            
+                            <div class="flight-details" style="flex: 1;">
+                                <div class="flight-code">
+                                    ✈️ {{ flight.validatingAirlineCodes.0 }} 
+                                    {% if flight.itineraries.0.segments.0.carrierCode %}
+                                    - {{ flight.itineraries.0.segments.0.carrierCode }}{{ flight.itineraries.0.segments.0.number }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="flight-price">
+                                {{ flight.price.currency }} {{ flight.price.total }}
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                            <div style="font-weight: 600; color: #667eea; margin-bottom: 10px; font-size: 15px;">
+                                ✈️ Outbound Flight ({{ departure_city }} → {{ arrival_city }})
+                            </div>
+                            <div class="flight-route">
+                                🛫 {{ flight.itineraries.0.segments.0.departure.iataCode }} → 
+                                🛬 {{ flight.itineraries.0.segments.0.arrival.iataCode }}
+                            </div>
+                            <div class="flight-time">
+                                ⏰ Departure: {{ flight.itineraries.0.segments.0.departure.at|slice:":16" }} | 
+                                Arrival: {{ flight.itineraries.0.segments.0.arrival.at|slice:":16" }}
+                            </div>
+                            <div class="flight-time">
+                                ⏱️ Duration: {{ flight.itineraries.0.duration|slice:"2:" }}
+                            </div>
+                            {% if flight.itineraries.0.segments|length > 1 %}
+                            <div class="flight-time" style="color: #f5576c; margin-top: 5px;">
+                                🔄 {{ flight.itineraries.0.segments|length }} stop(s)
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if flight.itineraries|length > 1 %}
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px;">
+                            <div style="font-weight: 600; color: #856404; margin-bottom: 10px; font-size: 15px;">
+                                ✈️ Return Flight ({{ arrival_city }} → {{ departure_city }})
+                            </div>
+                            <div class="flight-route">
+                                🛫 {{ flight.itineraries.1.segments.0.departure.iataCode }} → 
+                                🛬 {{ flight.itineraries.1.segments.0.arrival.iataCode }}
+                            </div>
+                            <div class="flight-time">
+                                ⏰ Departure: {{ flight.itineraries.1.segments.0.departure.at|slice:":16" }} | 
+                                Arrival: {{ flight.itineraries.1.segments.0.arrival.at|slice:":16" }}
+                            </div>
+                            <div class="flight-time">
+                                ⏱️ Duration: {{ flight.itineraries.1.duration|slice:"2:" }}
+                            </div>
+                            {% if flight.itineraries.1.segments|length > 1 %}
+                            <div class="flight-time" style="color: #f5576c; margin-top: 5px;">
+                                🔄 {{ flight.itineraries.1.segments|length }} stop(s)
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    
+                    <div style="margin-top: 25px; display: flex; gap: 15px;">
+                        <a href="{% url 'search_flight' %}" class="btn btn-primary" style="width: auto;">← Back to Search</a>
+                        <button type="submit" class="btn btn-success" style="flex: 1;" id="bookBtn" disabled>
+                            Continue to Booking →
+                        </button>
+                    </div>
+                </form>
+                
+                {% else %}
+                <div class="alert alert-warning">
+                    <p>No flights found for your search criteria. Please try different dates or destinations.</p>
+                </div>
+                <a href="{% url 'search_flight' %}" class="btn btn-primary">Back to Search</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('bookingForm');
+        const bookBtn = document.getElementById('bookBtn');
+        const radioButtons = document.querySelectorAll('input[name="selected_flight"]');
+        
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', function() {
+                bookBtn.disabled = false;
+            });
+        });
+        
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const selectedFlight = document.querySelector('input[name="selected_flight"]:checked');
+            
+            if (!selectedFlight) {
+                alert('Please select a flight');
+                return;
+            }
+            
+            const flightIndex = selectedFlight.dataset.index;
+            
+            window.location.href = `/booking/${flightIndex}/`;
+        });
+    </script>
+</body>
+</html>

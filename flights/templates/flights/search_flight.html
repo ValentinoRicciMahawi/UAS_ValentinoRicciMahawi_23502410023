@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Flight</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="window">
+            <div class="window-header">
+                <div class="window-buttons">
+                    <button class="window-button close"></button>
+                    <button class="window-button minimize"></button>
+                    <button class="window-button maximize"></button>
+                </div>
+            </div>
+            <div class="window-content">
+                <h1>SEARCH FLIGHT</h1>
+                
+                <div class="alert alert-info">
+                    <strong>Important:</strong> Don't add any personal info when testing this app in Sandbox.
+                </div>
+                
+                <form method="POST" action="{% url 'flight_results' %}" id="searchForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="departure_city">Departure City (IATA Code)</label>
+                            <input type="text" 
+                                   id="departure_city" 
+                                   name="departure_city" 
+                                   placeholder="e.g., JKT, CGK" 
+                                   required 
+                                   maxlength="3"
+                                   pattern="[A-Za-z]{3}"
+                                   title="Please enter 3-letter airport code">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="arrival_city">Arrival City (IATA Code)</label>
+                            <input type="text" 
+                                   id="arrival_city" 
+                                   name="arrival_city" 
+                                   placeholder="e.g., DPS, SUB" 
+                                   required 
+                                   maxlength="3"
+                                   pattern="[A-Za-z]{3}"
+                                   title="Please enter 3-letter airport code">
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="departure_date">Departure Date</label>
+                            <input type="date" 
+                                   id="departure_date" 
+                                   name="departure_date" 
+                                   required
+                                   min="">
+                        </div>
+                        
+                        <div class="form-group" id="returnDateGroup" style="display: none;">
+                            <label for="return_date">Return Date</label>
+                            <input type="date" 
+                                   id="return_date" 
+                                   name="return_date"
+                                   min="">
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="roundTrip" name="round_trip">
+                        <label for="roundTrip">Round Trip</label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Search Flights</button>
+                </form>
+                
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">💡 Tips:</h3>
+                    <ul style="color: #666; line-height: 1.8;">
+                        <li>Use 3-letter IATA airport codes (e.g., JKT for Jakarta, DPS for Bali)</li>
+                        <li>Common codes: CGK (Jakarta), DPS (Bali), SUB (Surabaya), SIN (Singapore)</li>
+                        <li>Check "Round Trip" if you need a return flight</li>
+                        <li>Select dates in the future for available flights</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('departure_date').setAttribute('min', today);
+        document.getElementById('return_date').setAttribute('min', today);
+        
+        document.getElementById('roundTrip').addEventListener('change', function() {
+            const returnDateGroup = document.getElementById('returnDateGroup');
+            const returnDateInput = document.getElementById('return_date');
+            
+            if (this.checked) {
+                returnDateGroup.style.display = 'block';
+                returnDateInput.required = true;
+            } else {
+                returnDateGroup.style.display = 'none';
+                returnDateInput.required = false;
+                returnDateInput.value = '';
+            }
+        });
+        
+        document.getElementById('departure_date').addEventListener('change', function() {
+            document.getElementById('return_date').setAttribute('min', this.value);
+        });
+        
+        document.getElementById('departure_city').addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase();
+        });
+        
+        document.getElementById('arrival_city').addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase();
+        });
+    </script>
+</body>
+</html>
